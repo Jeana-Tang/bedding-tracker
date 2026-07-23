@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>床单清洗管理 · Bedding Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f14;
+    --card: #1a1a24;
+    --card-hover: #1f1f2c;
+    --border: #2a2a3a;
+    --text: #e0e0e8;
+    --text-dim: #8888a0;
+    --green: #2dd4a0;
+    --green-bg: rgba(45,212,160,.12);
+    --yellow: #f5b042;
+    --yellow-bg: rgba(245,176,66,.12);
+    --orange: #f07b3a;
+    --orange-bg: rgba(240,123,58,.12);
+    --red: #e85555;
+    --red-bg: rgba(232,85,85,.12);
+    --accent: #6c8cff;
+    --accent-bg: rgba(108,140,255,.1);
+    --radius: 14px;
+    --transition: .25s cubic-bezier(.4,0,.2,1);
+  }
+  html { font-size: 15px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .container { max-width: 900px; width: 100%; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
+  }
+  .logo { display: flex; align-items: center; gap: .6rem; }
+  .logo-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+  }
+  .logo h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: -.02em; }
+  .logo span { font-size: .75rem; color: var(--text-dim); font-weight: 400; display: block; }
+  .actions { display: flex; gap: .5rem; }
+  .btn {
+    padding: .5rem 1rem; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); cursor: pointer;
+    font-size: .8rem; font-family: inherit; transition: var(--transition);
+    display: flex; align-items: center; gap: .35rem;
+  }
+  .btn:hover { background: var(--card-hover); border-color: #444; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #5b7de8; }
+  .summary {
+    display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem 1.2rem;
+    flex: 1; min-width: 120px;
+  }
+  .stat-value { font-size: 1.8rem; font-weight: 800; letter-spacing: -.02em; }
+  .stat-label { font-size: .75rem; color: var(--text-dim); margin-top: .2rem; }
+  .stat.green .stat-value { color: var(--green); }
+  .stat.yellow .stat-value { color: var(--yellow); }
+  .stat.red .stat-value { color: var(--red); }
+  .rooms { display: flex; flex-direction: column; gap: 1.2rem; }
+  .room-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; transition: var(--transition);
+  }
+  .room-header {
+    padding: .8rem 1.2rem; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: .5rem; font-weight: 600;
+    font-size: .9rem;
+  }
+  .room-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .room-dot.master { background: var(--accent); }
+  .room-dot.brother { background: #a78bfa; }
+  .room-dot.baby { background: #f59eaa; }
+  .items { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); }
+  .item {
+    background: var(--card); padding: 1rem; text-align: center;
+    cursor: pointer; transition: var(--transition); position: relative;
+    user-select: none;
+  }
+  .item:hover { background: var(--card-hover); }
+  .item:active { transform: scale(.97); }
+  .item-icon { font-size: 1.5rem; margin-bottom: .3rem; }
+  .item-name { font-size: .8rem; color: var(--text-dim); margin-bottom: .3rem; }
+  .item-days { font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; }
+  .item-status { font-size: .7rem; margin-top: .2rem; }
+  .item.green .item-days { color: var(--green); }
+  .item.green .item-status { color: var(--green); }
+  .item.yellow .item-days { color: var(--yellow); }
+  .item.yellow .item-status { color: var(--yellow); }
+  .item.orange .item-days { color: var(--orange); }
+  .item.orange .item-status { color: var(--orange); }
+  .item.red .item-days { color: var(--red); }
+  .item.red .item-status { color: var(--red); }
+  .item.wash-hint {
+    position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; background: rgba(15,15,20,.88);
+    font-size: .85rem; font-weight: 600; color: #fff; opacity: 0;
+    pointer-events: none; transition: var(--transition);
+  }
+  .item:hover .wash-hint { opacity: 1; }
+  .popup {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex;
+    align-items: center; justify-content: center; z-index: 100;
+    opacity: 0; pointer-events: none; transition: var(--transition);
+  }
+  .popup.active { opacity: 1; pointer-events: auto; }
+  .popup-inner {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 2rem; text-align: center;
+    max-width: 340px; width: 90%;
+  }
+  .popup-inner h3 { margin-bottom: .5rem; }
+  .popup-inner p { color: var(--text-dim); font-size: .85rem; margin-bottom: 1.5rem; }
+  .popup-btns { display: flex; gap: .5rem; justify-content: center; }
+  .heatmap-wrap { margin-bottom: 1.5rem; }
+  .heatmap-title { font-size: .75rem; color: var(--text-dim); margin-bottom: .6rem; }
+  .heatmap {
+    display: flex; gap: 3px; overflow-x: auto; padding-bottom: .3rem;
+  }
+  .heatmap-col { display: flex; flex-direction: column; gap: 3px; }
+  .heatmap-cell {
+    width: 12px; height: 12px; border-radius: 2px; background: var(--card);
+    border: 1px solid var(--border);
+  }
+  .heatmap-cell.l1 { background: rgba(108,140,255,.25); border-color: rgba(108,140,255,.3); }
+  .heatmap-cell.l2 { background: rgba(108,140,255,.5); border-color: rgba(108,140,255,.55); }
+  .heatmap-cell.l3 { background: rgba(108,140,255,.75); border-color: rgba(108,140,255,.8); }
+  .heatmap-cell.l4 { background: var(--accent); border-color: var(--accent); }
+  .heatmap-label { font-size: .6rem; color: var(--text-dim); margin-top: .2rem; text-align: center; }
+  .toast {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #fff; padding: .6rem 1.2rem;
+    border-radius: 8px; font-size: .85rem; font-weight: 600;
+    opacity: 0; pointer-events: none; transition: var(--transition); z-index: 200;
+  }
+  .toast.show { opacity: 1; }
+  .config {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.2rem; margin-bottom: 1.5rem;
+    display: none;
+  }
+  .config.show { display: block; }
+  .config-row { display: flex; align-items: center; gap: .8rem; margin-bottom: .8rem; flex-wrap: wrap; }
+  .config-row label { font-size: .8rem; color: var(--text-dim); min-width: 80px; }
+  .config-row input {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: .4rem .7rem; font-size: .8rem; font-family: inherit;
+    width: 70px; text-align: center;
+  }
+  @media (max-width: 600px) {
+    body { padding: 1rem; }
+    .items { grid-template-columns: 1fr; }
+    .summary { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🧺</div>
+      <div>
+        <h1>床单清洗管理</h1>
+        <span>30天周期 · 三房间九件套</span>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="toggleConfig()" title="设置">⚙️</button>
+      <button class="btn" onclick="exportData()">📋 导出</button>
+      <button class="btn" onclick="document.getElementById('importFile').click()">📥 导入</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+      <button class="btn btn-primary" onclick="markAll()">✨ 一键全洗</button>
+    </div>
+  </header>
+
+  <div class="config" id="configPanel">
+    <div class="config-row">
+      <label>清洗周期(天)</label>
+      <input type="number" id="cycleDays" value="30" min="7" max="90" onchange="saveConfig()">
+    </div>
+    <div class="config-row">
+      <label>提醒提前(天)</label>
+      <input type="number" id="warnDays" value="7" min="1" max="30" onchange="saveConfig()">
+    </div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="heatmap-wrap">
+    <div class="heatmap-title">📅 近12周清洗记录热力图</div>
+    <div class="heatmap" id="heatmap"></div>
+  </div>
+
+  <div class="rooms" id="rooms"></div>
+</div>
+
+<div class="popup" id="popup">
+  <div class="popup-inner">
+    <h3 id="popupTitle"></h3>
+    <p>确认今天洗了这件？清洗日期将更新为今天，30天倒计时重新开始。</p>
+    <div class="popup-btns">
+      <button class="btn" onclick="closePopup()">取消</button>
+      <button class="btn btn-primary" onclick="confirmWash()">✅ 洗了</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ROOMS = [
+  { id: 'master', name: '主卧', dotClass: 'master', items: [
+    { id: 'master-sheet', type: '床单', icon: '🛏️' },
+    { id: 'master-duvet', type: '被罩', icon: '🫧' },
+    { id: 'master-pillow', type: '枕套', icon: '🪶' }
+  ]},
+  { id: 'brother', name: '哥哥房', dotClass: 'brother', items: [
+    { id: 'brother-sheet', type: '床单', icon: '🛏️' },
+    { id: 'brother-duvet', type: '被罩', icon: '🫧' },
+    { id: 'brother-pillow', type: '枕套', icon: '🪶' }
+  ]},
+  { id: 'baby', name: '二宝房', dotClass: 'baby', items: [
+    { id: 'baby-sheet', type: '床单', icon: '🛏️' },
+    { id: 'baby-duvet', type: '被罩', icon: '🫧' },
+    { id: 'baby-pillow', type: '枕套', icon: '🪶' }
+  ]}
+];
+
+const STORAGE_KEY = 'bedding-tracker-data';
+const CONFIG_KEY = 'bedding-tracker-config';
+let data = {};
+let config = { cycleDays: 30, warnDays: 7 };
+let pendingItemId = null;
+
+function today() { return new Date().toISOString().slice(0,10); }
+
+function daysSince(dateStr) {
+  return Math.floor((new Date() - new Date(dateStr)) / 86400000);
+}
+
+function getStatus(days) {
+  if (days <= config.cycleDays - config.warnDays) return 'green';
+  if (days <= config.cycleDays) return 'yellow';
+  if (days <= config.cycleDays + 7) return 'orange';
+  return 'red';
+}
+
+function statusText(status, days) {
+  if (status === 'green') return '✅ 干净';
+  if (status === 'yellow') return `⚠️ ${config.cycleDays - days}天后该洗`;
+  if (status === 'orange') return '🔶 已超期';
+  return '🔴 该洗了！';
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) { data = JSON.parse(raw); return; }
+  } catch(e) {}
+  data = {};
+  const d = today();
+  ROOMS.forEach(r => r.items.forEach(i => {
+    if (!data[i.id]) data[i.id] = d;
+  }));
+  saveData();
+}
+
+function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+function loadConfig() {
+  try {
+    const raw = localStorage.getItem(CONFIG_KEY);
+    if (raw) { config = JSON.parse(raw); return; }
+  } catch(e) {}
+  config = { cycleDays: 30, warnDays: 7 };
+}
+
+function saveConfig() {
+  config.cycleDays = parseInt(document.getElementById('cycleDays').value) || 30;
+  config.warnDays = parseInt(document.getElementById('warnDays').value) || 7;
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+  render();
+}
+
+function toggleConfig() {
+  document.getElementById('configPanel').classList.toggle('show');
+}
+
+function render() {
+  renderSummary();
+  renderHeatmap();
+  renderRooms();
+}
+
+function renderSummary() {
+  let green = 0, yellow = 0, red = 0;
+  ROOMS.forEach(r => r.items.forEach(i => {
+    const days = daysSince(data[i.id] || today());
+    const s = getStatus(days);
+    if (s === 'green') green++;
+    else if (s === 'yellow') yellow++;
+    else red++;
+  }));
+  document.getElementById('summary').innerHTML = `
+    <div class="stat green"><div class="stat-value">${green}</div><div class="stat-label">干净</div></div>
+    <div class="stat yellow"><div class="stat-value">${yellow}</div><div class="stat-label">快到周期</div></div>
+    <div class="stat red"><div class="stat-value">${red}</div><div class="stat-label">超期/该洗</div></div>
+  `;
+}
+
+function renderHeatmap() {
+  const weeks = [];
+  const now = new Date();
+  for (let w = 11; w >= 0; w--) {
+    const weekDays = [];
+    for (let d = 6; d >= 0; d--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - (w * 7 + d));
+      const dateStr = date.toISOString().slice(0,10);
+      let count = 0;
+      ROOMS.forEach(r => r.items.forEach(i => {
+        if (data[i.id] === dateStr) count++;
+      }));
+      weekDays.push({ date: dateStr, count });
+    }
+    weeks.push(weekDays);
+  }
+  const el = document.getElementById('heatmap');
+  el.innerHTML = weeks.map((week, wi) => {
+    const cells = week.map(d => {
+      let cls = '';
+      if (d.count >= 4) cls = 'l4';
+      else if (d.count >= 3) cls = 'l3';
+      else if (d.count >= 2) cls = 'l2';
+      else if (d.count >= 1) cls = 'l1';
+      const tip = `${d.date.slice(5)} · ${d.count}件`;
+      return `<div class="heatmap-cell ${cls}" title="${tip}"></div>`;
+    }).join('');
+    const label = week[0].date.slice(5);
+    return `<div class="heatmap-col">${cells}<div class="heatmap-label">${label}</div></div>`;
+  }).join('');
+}
+
+function renderRooms() {
+  const el = document.getElementById('rooms');
+  el.innerHTML = ROOMS.map(r => `
+    <div class="room-card">
+      <div class="room-header">
+        <div class="room-dot ${r.dotClass}"></div>${r.name}
+      </div>
+      <div class="items">
+        ${r.items.map(i => {
+          const days = daysSince(data[i.id] || today());
+          const status = getStatus(days);
+          return `
+            <div class="item ${status}" onclick="openPopup('${i.id}','${r.name}${i.type}')">
+              <div class="item-icon">${i.icon}</div>
+              <div class="item-name">${i.type}</div>
+              <div class="item-days">${days}<span style="font-size:.6em;font-weight:400;color:var(--text-dim)">天</span></div>
+              <div class="item-status">${statusText(status, days)}</div>
+              <div class="wash-hint">🧺 点我标记已洗</div>
+            </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function openPopup(id, name) {
+  pendingItemId = id;
+  document.getElementById('popupTitle').textContent = `标记 ${name} 为已洗？`;
+  document.getElementById('popup').classList.add('active');
+}
+
+function closePopup() {
+  document.getElementById('popup').classList.remove('active');
+  pendingItemId = null;
+}
+
+function confirmWash() {
+  if (pendingItemId) {
+    data[pendingItemId] = today();
+    saveData();
+    render();
+    showToast('✅ 已更新清洗日期');
+  }
+  closePopup();
+}
+
+function markAll() {
+  ROOMS.forEach(r => r.items.forEach(i => { data[i.id] = today(); }));
+  saveData();
+  render();
+  showToast('🎉 全部标记为今天清洗');
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify({ data, config, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `bedding-tracker-${today()}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('📋 数据已导出');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const json = JSON.parse(ev.target.result);
+      if (json.data) { data = json.data; saveData(); }
+      if (json.config) { config = json.config; saveConfig(); }
+      render();
+      showToast('📥 数据已导入');
+    } catch(e) { showToast('❌ 导入失败，文件格式不对'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+document.getElementById('popup').addEventListener('click', function(e) {
+  if (e.target === this) closePopup();
+});
+
+loadConfig();
+document.getElementById('cycleDays').value = config.cycleDays;
+document.getElementById('warnDays').value = config.warnDays;
+loadData();
+render();
+</script>
+</body>
+</html>

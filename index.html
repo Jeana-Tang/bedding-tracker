@@ -2,104 +2,326 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>床单清洗管理 · Bedding Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>床品管家 · 清洗日历</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@600;700;800;900&display=swap');
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
   :root {
-    --bg: #0f0f14;
-    --card: #1a1a24;
-    --card-hover: #1f1f2c;
-    --border: #2a2a3a;
-    --text: #e0e0e8;
-    --text-dim: #8888a0;
-    --green: #2dd4a0;
-    --green-bg: rgba(45,212,160,.12);
-    --yellow: #f5b042;
-    --yellow-bg: rgba(245,176,66,.12);
-    --orange: #f07b3a;
-    --orange-bg: rgba(240,123,58,.12);
-    --red: #e85555;
-    --red-bg: rgba(232,85,85,.12);
-    --accent: #6c8cff;
-    --accent-bg: rgba(108,140,255,.1);
-    --radius: 14px;
-    --transition: .25s cubic-bezier(.4,0,.2,1);
+    --bg: #f8f4ef;
+    --card: #ffffff;
+    --border: #e0d8cc;
+    --text: #4a3f35;
+    --text-dim: #9a8e82;
+    --green: #7ec850;
+    --yellow: #e0b838;
+    --orange: #e88050;
+    --red: #e87060;
+    --radius: 18px;
+    --radius-sm: 12px;
+    --t: .25s cubic-bezier(.34,1.56,.64,1);
+    --t-smooth: .35s ease;
   }
-  html { font-size: 15px; }
+
+  html { font-size: 17px; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+    font-family: 'Nunito', "PingFang SC", "Noto Sans SC", sans-serif;
     background: var(--bg);
+    background-image:
+      linear-gradient(rgba(100,70,40,.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(100,70,40,.02) 1px, transparent 1px);
+    background-size: 24px 24px;
     color: var(--text);
     min-height: 100vh;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    padding: 1.5rem 1rem 3rem;
+    display: flex; flex-direction: column; align-items: center;
+    -webkit-tap-highlight-color: transparent;
   }
-  .container { max-width: 900px; width: 100%; }
+
+  /* ═══════════════════════════════════════
+     GLOBAL BACKGROUND DECORATIONS
+     ═══════════════════════════════════════ */
+  .bg-decor { position: fixed; pointer-events: none; z-index: 0; }
+  .bg-decor.mc-block {
+    width: 20px; height: 20px; border-radius: 2px;
+    opacity: .25; image-rendering: pixelated;
+  }
+  .bg-decor.mc-block:nth-child(1) { background: #7ec850; top: 8%; left: 12%; animation: bob1 5s ease-in-out infinite; }
+  .bg-decor.mc-block:nth-child(2) { background: #9b6b3a; top: 18%; right: 8%; animation: bob2 6s ease-in-out 1s infinite; }
+  .bg-decor.mc-block:nth-child(3) { background: #8b8b8b; bottom: 22%; left: 6%; animation: bob3 7s ease-in-out 2s infinite; }
+  .bg-decor.mc-block:nth-child(4) { background: #c8985a; bottom: 10%; right: 14%; animation: bob1 5.5s ease-in-out .5s infinite; }
+
+  .bg-decor.mlp-sparkle {
+    border-radius: 50%;
+    opacity: .3;
+  }
+  .bg-decor.mlp-sparkle:nth-child(5) { width: 14px; height: 14px; background: #f0a8c8; top: 30%; right: 15%; animation: float1 4s ease-in-out infinite; }
+  .bg-decor.mlp-sparkle:nth-child(6) { width: 10px; height: 10px; background: #c8a0e8; top: 55%; left: 10%; animation: float2 5s ease-in-out 1s infinite; }
+  .bg-decor.mlp-sparkle:nth-child(7) { width: 12px; height: 12px; background: #98c8f8; bottom: 30%; right: 10%; animation: float3 4.5s ease-in-out 2s infinite; }
+  .bg-decor.mlp-sparkle:nth-child(8) { width: 8px; height: 8px; background: #f8d898; top: 45%; right: 22%; animation: float2 5.5s ease-in-out .5s infinite; }
+
+  @keyframes bob1 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+  @keyframes bob2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+  @keyframes bob3 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  @keyframes float1 { 0%,100%{transform:translateY(0) scale(1);opacity:.3} 50%{transform:translateY(-18px) scale(1.3);opacity:.5} }
+  @keyframes float2 { 0%,100%{transform:translateY(0) scale(1);opacity:.25} 50%{transform:translateY(-12px) scale(1.4);opacity:.45} }
+  @keyframes float3 { 0%,100%{transform:translateY(0) scale(1);opacity:.2} 50%{transform:translateY(-16px) scale(1.3);opacity:.4} }
+
+  /* Rainbow border strips */
+  .rainbow-top, .rainbow-bottom {
+    position: fixed; left: 0; right: 0; height: 3px; z-index: 0; pointer-events: none;
+    background: linear-gradient(90deg, #f8a8c8, #f8d898, #a8e8a8, #98c8f8, #d8a8f0, #f8a8c8);
+    background-size: 200% 100%;
+    opacity: .18;
+  }
+  .rainbow-top { top: 0; animation: rainbowSlide 10s linear infinite; }
+  .rainbow-bottom { bottom: 0; animation: rainbowSlide 10s linear infinite reverse; }
+  @keyframes rainbowSlide { 0%{background-position:0 0} 100%{background-position:200% 0} }
+
+  .container { max-width: 940px; width: 100%; position: relative; z-index: 1; }
+
+  /* ═══════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════ */
   header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;
+    margin-bottom: 1.6rem; flex-wrap: wrap; gap: .8rem;
   }
-  .logo { display: flex; align-items: center; gap: .6rem; }
+  .logo {
+    display: flex; align-items: center; gap: .7rem;
+    background: var(--card); padding: .6rem 1.3rem;
+    border-radius: var(--radius);
+    border: 3px solid #d8d0c0;
+    box-shadow: 4px 4px 0px rgba(80,60,40,.1);
+    transition: var(--t);
+  }
+  .logo:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0px rgba(80,60,40,.14); }
   .logo-icon {
-    width: 38px; height: 38px; border-radius: 10px;
-    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    width: 48px; height: 48px; border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
+    background: linear-gradient(135deg, #e8d8c8, #d8c8b8);
+    border: 3px solid #c8b8a0;
+    box-shadow: 2px 2px 0px rgba(0,0,0,.08), inset 0 2px 0 rgba(255,255,255,.4);
+    image-rendering: pixelated;
   }
-  .logo h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: -.02em; }
-  .logo span { font-size: .75rem; color: var(--text-dim); font-weight: 400; display: block; }
-  .actions { display: flex; gap: .5rem; }
+  .logo-text h1 {
+    font-family: 'Nunito', sans-serif; font-size: 1.5rem; font-weight: 900;
+    color: #4a3f35; line-height: 1.4;
+  }
+  .logo-text span { font-size: .68rem; color: var(--text-dim); font-weight: 700; }
+
+  .actions { display: flex; gap: .35rem; flex-wrap: wrap; }
   .btn {
-    padding: .5rem 1rem; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--card); color: var(--text); cursor: pointer;
-    font-size: .8rem; font-family: inherit; transition: var(--transition);
-    display: flex; align-items: center; gap: .35rem;
+    padding: .5rem .85rem; border-radius: 10px;
+    border: 3px solid #d8d0c0;
+    background: var(--card); color: var(--text);
+    cursor: pointer;
+    font-size: .7rem; font-family: 'Nunito', sans-serif; font-weight: 800;
+    transition: var(--t);
+    display: flex; align-items: center; gap: .2rem;
+    box-shadow: 3px 3px 0px rgba(80,60,40,.1);
+    white-space: nowrap;
   }
-  .btn:hover { background: var(--card-hover); border-color: #444; }
-  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .btn-primary:hover { background: #5b7de8; }
-  .summary {
-    display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+  .btn:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0px rgba(80,60,40,.16); }
+  .btn:active { transform: translate(1px,1px); box-shadow: 1px 1px 0px rgba(80,60,40,.08); }
+  .btn-accent {
+    background: linear-gradient(135deg, #7ec850, #68b040);
+    border-color: #509030;
+    color: #fff;
+    box-shadow: 3px 3px 0px rgba(50,100,30,.2);
   }
-  .stat {
-    background: var(--card); border: 1px solid var(--border);
+  .btn-accent:hover { box-shadow: 5px 5px 0px rgba(50,100,30,.26); }
+
+  /* ═══════════════════════════════════════
+     CONFIG PANEL
+     ═══════════════════════════════════════ */
+  .config {
+    background: var(--card); border: 3px solid #d8d0c0;
+    border-radius: var(--radius); padding: 1rem 1.3rem;
+    margin-bottom: 1.2rem; display: none;
+    box-shadow: 4px 4px 0px rgba(80,60,40,.1);
+  }
+  .config.show { display: flex; gap: 1.2rem; flex-wrap: wrap; align-items: center; }
+  .config-item { display: flex; align-items: center; gap: .5rem; }
+  .config-item label { font-size: .73rem; color: var(--text-dim); font-weight: 800; white-space: nowrap; }
+  .config-item input {
+    background: #faf7f2; border: 3px solid #d8d0c0; border-radius: 10px;
+    color: var(--text); padding: .4rem .7rem; font-size: .75rem;
+    font-family: inherit; font-weight: 800;
+    width: 65px; text-align: center;
+    transition: var(--t-smooth);
+  }
+  .config-item input:focus { border-color: #7ec850; outline: none; box-shadow: 0 0 0 3px rgba(126,200,80,.1); }
+
+  /* ═══════════════════════════════════════
+     STATS ROW
+     ═══════════════════════════════════════ */
+  .stats { display: flex; gap: .6rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+  .stat-card {
+    background: var(--card); border: 3px solid #d8d0c0;
+    border-radius: var(--radius); padding: 1rem 1.3rem;
+    flex: 1; min-width: 100px;
+    box-shadow: 4px 4px 0px rgba(80,60,40,.1);
+    transition: var(--t);
+    text-align: center;
+  }
+  .stat-card:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0px rgba(80,60,40,.15); }
+  .stat-num { font-size: 2.4rem; font-weight: 900; letter-spacing: -.03em; line-height: 1; }
+  .stat-num.green { color: var(--green); }
+  .stat-num.yellow { color: var(--yellow); }
+  .stat-num.red { color: var(--red); }
+  .stat-sub { font-size: .68rem; color: var(--text-dim); margin-top: .15rem; font-weight: 800; }
+
+  /* ═══════════════════════════════════════
+     HEATMAP
+     ═══════════════════════════════════════ */
+  .heatmap-section {
+    background: var(--card); border: 3px solid #d8d0c0;
     border-radius: var(--radius); padding: 1rem 1.2rem;
-    flex: 1; min-width: 120px;
+    margin-bottom: 1.2rem;
+    box-shadow: 4px 4px 0px rgba(80,60,40,.1);
   }
-  .stat-value { font-size: 1.8rem; font-weight: 800; letter-spacing: -.02em; }
-  .stat-label { font-size: .75rem; color: var(--text-dim); margin-top: .2rem; }
-  .stat.green .stat-value { color: var(--green); }
-  .stat.yellow .stat-value { color: var(--yellow); }
-  .stat.red .stat-value { color: var(--red); }
-  .rooms { display: flex; flex-direction: column; gap: 1.2rem; }
+  .heatmap-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: .7rem; flex-wrap: wrap; gap: .4rem;
+  }
+  .heatmap-title { font-size: .72rem; color: var(--text-dim); font-weight: 800; }
+  .heatmap-legend { display: flex; gap: .5rem; align-items: center; }
+  .heatmap-legend span { font-size: .6rem; color: var(--text-dim); font-weight: 700; }
+  .legend-dot {
+    width: 12px; height: 12px; border-radius: 3px; border: 2px solid #e0d8cc;
+    display: inline-block; vertical-align: middle; margin-right: 2px;
+  }
+  .legend-dot.l1 { background: #c8e8b0; border-color: #a8d090; }
+  .legend-dot.l2 { background: #90d070; border-color: #70b050; }
+  .legend-dot.l3 { background: #f0c860; border-color: #d8b040; }
+  .legend-dot.l4 { background: #e87850; border-color: #d06040; }
+
+  .heatmap { display: flex; gap: 3px; overflow-x: auto; padding-bottom: .2rem; -webkit-overflow-scrolling: touch; }
+  .heatmap-col { display: flex; flex-direction: column; gap: 3px; min-width: 15px; }
+  .heatmap-cell {
+    width: 15px; height: 15px; border-radius: 3px;
+    background: #f2ece4; border: 2px solid #e8e0d4;
+    transition: var(--t); image-rendering: pixelated;
+  }
+  .heatmap-cell.l1 { background: #c8e8b0; border-color: #a8d090; box-shadow: 0 1px 2px rgba(120,180,80,.2); }
+  .heatmap-cell.l2 { background: #90d070; border-color: #70b050; box-shadow: 0 1px 3px rgba(100,160,60,.25); }
+  .heatmap-cell.l3 { background: #f0c860; border-color: #d8b040; box-shadow: 0 1px 3px rgba(200,160,40,.25); }
+  .heatmap-cell.l4 { background: #e87850; border-color: #d06040; box-shadow: 0 1px 3px rgba(200,80,40,.3); }
+  .heatmap-cell:hover { transform: scale(1.5); z-index: 5; }
+  .heatmap-col-label { font-size: .55rem; color: #b8aca0; margin-top: 2px; text-align: center; font-weight: 700; }
+
+  /* ═══════════════════════════════════════
+     ROOM CARDS
+     ═══════════════════════════════════════ */
+  .rooms { display: flex; flex-direction: column; gap: 1.3rem; }
   .room-card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: var(--radius); overflow: hidden; transition: var(--transition);
+    border-radius: var(--radius); overflow: hidden;
+    border: 3px solid #d8d0c0;
+    box-shadow: 5px 5px 0px rgba(80,60,40,.12);
+    transition: var(--t);
+    background: var(--card);
   }
-  .room-header {
-    padding: .8rem 1.2rem; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: .5rem; font-weight: 600;
-    font-size: .9rem;
+  .room-card:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0px rgba(80,60,40,.16); }
+
+  /* Master room header */
+  .room-head {
+    padding: .75rem 1.2rem; display: flex; align-items: center; gap: .55rem;
+    font-weight: 800; font-size: .85rem;
   }
-  .room-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .room-dot.master { background: var(--accent); }
-  .room-dot.brother { background: #a78bfa; }
-  .room-dot.baby { background: #f59eaa; }
-  .items { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); }
+  .room-head.master {
+    background: linear-gradient(135deg, #f0e8fa, #e4d8f4);
+    border-bottom: 3px solid #d4c4e4;
+    color: #4a3f50;
+  }
+  /* Brother room - Minecraft themed */
+  .room-head.brother {
+    background: linear-gradient(135deg, #8ec860 0%, #7ab850 40%, #5a9030 100%);
+    border-bottom: 3px solid #407020;
+    color: #2a3a18;
+    font-family: 'Nunito', sans-serif; font-size: .88rem; font-weight: 900; letter-spacing: .02em;
+  }
+  /* Baby room - MLP themed */
+  .room-head.baby {
+    background: linear-gradient(135deg, #f8c8e0, #e0c8f8, #c8d8f8);
+    background-size: 300% 300%;
+    animation: mlpBg 5s ease-in-out infinite;
+    border-bottom: 3px solid #d8b0d0;
+    color: #4a3060;
+  }
+  @keyframes mlpBg {
+    0%,100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .room-avatar {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    box-shadow: 2px 2px 0px rgba(0,0,0,.12);
+    border: 2px solid rgba(255,255,255,.4);
+    flex-shrink: 0;
+    image-rendering: pixelated;
+  }
+  .room-avatar.master { background: linear-gradient(135deg, #d0b8f0, #c0a8e0); }
+  .room-avatar.brother { background: linear-gradient(135deg, #f0e0a0, #e0d090); font-size: .8rem; }
+  .room-avatar.baby { background: linear-gradient(135deg, #ffffff, #f8e8ff); border-radius: 50%; font-size: 1.2rem; }
+
+  .room-status { margin-left: auto; font-weight: 700; font-size: .7rem; }
+  .room-status .done { color: var(--green); }
+  .room-status .pending { color: var(--orange); }
+
+  /* Items grid */
+  .items { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #e8e0d4; }
   .item {
-    background: var(--card); padding: 1rem; text-align: center;
-    cursor: pointer; transition: var(--transition); position: relative;
-    user-select: none;
+    background: var(--card); padding: 1rem .7rem; text-align: center;
+    cursor: pointer; transition: var(--t); position: relative;
+    user-select: none; overflow: hidden;
   }
-  .item:hover { background: var(--card-hover); }
-  .item:active { transform: scale(.97); }
-  .item-icon { font-size: 1.5rem; margin-bottom: .3rem; }
-  .item-name { font-size: .8rem; color: var(--text-dim); margin-bottom: .3rem; }
-  .item-days { font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; }
-  .item-status { font-size: .7rem; margin-top: .2rem; }
+  .item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.1);
+    border-radius: var(--radius-sm);
+    z-index: 2;
+  }
+  .item:active { transform: translateY(0) scale(.97); }
+
+  .item-icon-wrap { position: relative; display: inline-block; margin-bottom: .2rem; }
+  .item-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 3px 4px rgba(0,0,0,.08));
+    transition: var(--t);
+    display: block;
+  }
+  .item:hover .item-icon {
+    transform: scale(1.2);
+    filter: drop-shadow(0 6px 8px rgba(0,0,0,.14));
+  }
+
+  .item-name { font-size: .72rem; color: var(--text-dim); margin-bottom: .25rem; font-weight: 800; }
+  .item-days { font-size: 1.7rem; font-weight: 900; letter-spacing: -.03em; line-height: 1; }
+  .item-status { font-size: .6rem; margin-top: .15rem; font-weight: 800; }
+
+  /* Progress bar */
+  .item-bar-wrap {
+    width: 100%; height: 5px; background: #f0e8dc;
+    border-radius: 10px; margin-top: .3rem; overflow: hidden;
+    border: 1px solid #e8d8c8;
+  }
+  .item-bar {
+    height: 100%; border-radius: 10px; transition: var(--t-smooth);
+  }
+  .item-bar.green { background: linear-gradient(90deg, #a8e090, var(--green)); }
+  .item-bar.yellow { background: linear-gradient(90deg, #f0d060, var(--yellow)); }
+  .item-bar.orange { background: linear-gradient(90deg, #f0a060, var(--orange)); }
+  .item-bar.red { background: linear-gradient(90deg, #f08070, var(--red)); }
+
   .item.green .item-days { color: var(--green); }
   .item.green .item-status { color: var(--green); }
   .item.yellow .item-days { color: var(--yellow); }
@@ -108,76 +330,117 @@
   .item.orange .item-status { color: var(--orange); }
   .item.red .item-days { color: var(--red); }
   .item.red .item-status { color: var(--red); }
-  .item.wash-hint {
+
+  /* Room-specific item tweaks */
+  .brother-room .item {
+    background: linear-gradient(180deg, #fefffc 0%, #f5faf0 100%);
+  }
+  .brother-room .item:hover {
+    background: #e8f8d8;
+  }
+  .brother-room .item-icon { image-rendering: pixelated; }
+
+  .baby-room .item {
+    background: linear-gradient(180deg, #fffcff 0%, #fdf6ff 100%);
+  }
+  .baby-room .item:hover {
+    background: linear-gradient(180deg, #fff0fb 0%, #fef0ff 100%);
+  }
+  .baby-room .item::before {
+    content: ''; position: absolute; top: -20px; right: -20px;
+    width: 40px; height: 40px;
+    background: radial-gradient(circle, rgba(240,168,200,.15) 0%, transparent 70%);
+    border-radius: 50%;
+    opacity: 0; transition: var(--t);
+  }
+  .baby-room .item:hover::before { opacity: 1; }
+
+  .wash-overlay {
     position: absolute; inset: 0; display: flex; align-items: center;
-    justify-content: center; background: rgba(15,15,20,.88);
-    font-size: .85rem; font-weight: 600; color: #fff; opacity: 0;
-    pointer-events: none; transition: var(--transition);
+    justify-content: center;
+    background: rgba(255,250,245,.94);
+    font-size: .82rem; font-weight: 800; color: #6a5040;
+    opacity: 0; pointer-events: none; transition: var(--t);
+    border-radius: var(--radius-sm);
   }
-  .item:hover .wash-hint { opacity: 1; }
-  .popup {
-    position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex;
-    align-items: center; justify-content: center; z-index: 100;
-    opacity: 0; pointer-events: none; transition: var(--transition);
+  .item:hover .wash-overlay { opacity: 1; }
+
+  /* ═══════════════════════════════════════
+     MODAL
+     ═══════════════════════════════════════ */
+  .modal {
+    position: fixed; inset: 0; background: rgba(80,50,30,.3);
+    backdrop-filter: blur(5px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; opacity: 0; pointer-events: none; transition: var(--t-smooth);
   }
-  .popup.active { opacity: 1; pointer-events: auto; }
-  .popup-inner {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 2rem; text-align: center;
-    max-width: 340px; width: 90%;
+  .modal.on { opacity: 1; pointer-events: auto; }
+  .modal-box {
+    background: var(--card); border: 3px solid #d8d0c0;
+    border-radius: var(--radius); padding: 2rem 1.8rem; text-align: center;
+    max-width: 340px; width: 92%;
+    box-shadow: 10px 10px 0px rgba(80,60,40,.2);
+    transform: translateY(16px) scale(.95);
+    transition: var(--t);
   }
-  .popup-inner h3 { margin-bottom: .5rem; }
-  .popup-inner p { color: var(--text-dim); font-size: .85rem; margin-bottom: 1.5rem; }
-  .popup-btns { display: flex; gap: .5rem; justify-content: center; }
-  .heatmap-wrap { margin-bottom: 1.5rem; }
-  .heatmap-title { font-size: .75rem; color: var(--text-dim); margin-bottom: .6rem; }
-  .heatmap {
-    display: flex; gap: 3px; overflow-x: auto; padding-bottom: .3rem;
-  }
-  .heatmap-col { display: flex; flex-direction: column; gap: 3px; }
-  .heatmap-cell {
-    width: 12px; height: 12px; border-radius: 2px; background: var(--card);
-    border: 1px solid var(--border);
-  }
-  .heatmap-cell.l1 { background: rgba(108,140,255,.25); border-color: rgba(108,140,255,.3); }
-  .heatmap-cell.l2 { background: rgba(108,140,255,.5); border-color: rgba(108,140,255,.55); }
-  .heatmap-cell.l3 { background: rgba(108,140,255,.75); border-color: rgba(108,140,255,.8); }
-  .heatmap-cell.l4 { background: var(--accent); border-color: var(--accent); }
-  .heatmap-label { font-size: .6rem; color: var(--text-dim); margin-top: .2rem; text-align: center; }
+  .modal.on .modal-box { transform: translateY(0) scale(1); }
+  .modal-box h3 { font-size: 1rem; margin-bottom: .4rem; font-weight: 900; }
+  .modal-box p { color: var(--text-dim); font-size: .78rem; margin-bottom: 1.5rem; font-weight: 700; }
+  .modal-btns { display: flex; gap: .7rem; justify-content: center; }
+
+  /* ═══════════════════════════════════════
+     TOAST
+     ═══════════════════════════════════════ */
   .toast {
     position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
-    background: var(--accent); color: #fff; padding: .6rem 1.2rem;
-    border-radius: 8px; font-size: .85rem; font-weight: 600;
-    opacity: 0; pointer-events: none; transition: var(--transition); z-index: 200;
+    background: linear-gradient(135deg, #5a4838, #4a3828);
+    color: #fff; padding: .6rem 1.4rem;
+    border-radius: 10px; font-size: .8rem; font-weight: 800;
+    opacity: 0; pointer-events: none; transition: var(--t);
+    z-index: 200;
+    border: 2px solid #7a6858;
+    box-shadow: 4px 4px 0px rgba(0,0,0,.15);
   }
-  .toast.show { opacity: 1; }
-  .config {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 1.2rem; margin-bottom: 1.5rem;
-    display: none;
+  .toast.show {
+    opacity: 1;
+    animation: toastPop .4s cubic-bezier(.34,1.56,.64,1);
   }
-  .config.show { display: block; }
-  .config-row { display: flex; align-items: center; gap: .8rem; margin-bottom: .8rem; flex-wrap: wrap; }
-  .config-row label { font-size: .8rem; color: var(--text-dim); min-width: 80px; }
-  .config-row input {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
-    color: var(--text); padding: .4rem .7rem; font-size: .8rem; font-family: inherit;
-    width: 70px; text-align: center;
+  @keyframes toastPop {
+    from { transform: translateX(-50%) translateY(8px) scale(.9); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
   }
-  @media (max-width: 600px) {
-    body { padding: 1rem; }
+
+  @media (max-width: 640px) {
+    body { padding: .7rem .5rem 2rem; }
     .items { grid-template-columns: 1fr; }
-    .summary { flex-direction: column; }
+    .stats { flex-direction: column; }
+    .stat-card { min-width: auto; }
+    .actions { justify-content: center; }
+    .btn { font-size: .65rem; padding: .4rem .7rem; }
+    .room-head.brother { font-size: .75rem; }
+    .logo-text h1 { font-size: .58rem; }
   }
 </style>
 </head>
 <body>
+
+<div class="bg-decor mc-block"></div>
+<div class="bg-decor mc-block"></div>
+<div class="bg-decor mc-block"></div>
+<div class="bg-decor mc-block"></div>
+<div class="bg-decor mlp-sparkle"></div>
+<div class="bg-decor mlp-sparkle"></div>
+<div class="bg-decor mlp-sparkle"></div>
+<div class="bg-decor mlp-sparkle"></div>
+<div class="rainbow-top"></div>
+<div class="rainbow-bottom"></div>
+
 <div class="container">
   <header>
     <div class="logo">
       <div class="logo-icon">🧺</div>
-      <div>
-        <h1>床单清洗管理</h1>
+      <div class="logo-text">
+        <h1>床品管家</h1>
         <span>30天周期 · 三房间九件套</span>
       </div>
     </div>
@@ -186,38 +449,49 @@
       <button class="btn" onclick="exportData()">📋 导出</button>
       <button class="btn" onclick="document.getElementById('importFile').click()">📥 导入</button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
-      <button class="btn btn-primary" onclick="markAll()">✨ 一键全洗</button>
+      <button class="btn" onclick="resetFromFile()">🔄 重置</button>
+      <button class="btn btn-accent" onclick="markAll()">✨ 全洗</button>
     </div>
   </header>
 
   <div class="config" id="configPanel">
-    <div class="config-row">
-      <label>清洗周期(天)</label>
+    <div class="config-item">
+      <label>🕐 清洗周期</label>
       <input type="number" id="cycleDays" value="30" min="7" max="90" onchange="saveConfig()">
+      <span style="font-size:.65rem;color:var(--text-dim)">天</span>
     </div>
-    <div class="config-row">
-      <label>提醒提前(天)</label>
+    <div class="config-item">
+      <label>🔔 提醒提前</label>
       <input type="number" id="warnDays" value="7" min="1" max="30" onchange="saveConfig()">
+      <span style="font-size:.65rem;color:var(--text-dim)">天</span>
     </div>
   </div>
 
-  <div class="summary" id="summary"></div>
+  <div class="stats" id="stats"></div>
 
-  <div class="heatmap-wrap">
-    <div class="heatmap-title">📅 近12周清洗记录热力图</div>
+  <div class="heatmap-section">
+    <div class="heatmap-header">
+      <div class="heatmap-title">📅 近12周清洗热力图</div>
+      <div class="heatmap-legend">
+        <span><span class="legend-dot l1"></span> 1件</span>
+        <span><span class="legend-dot l2"></span> 2件</span>
+        <span><span class="legend-dot l3"></span> 3件</span>
+        <span><span class="legend-dot l4"></span> 4+件</span>
+      </div>
+    </div>
     <div class="heatmap" id="heatmap"></div>
   </div>
 
   <div class="rooms" id="rooms"></div>
 </div>
 
-<div class="popup" id="popup">
-  <div class="popup-inner">
-    <h3 id="popupTitle"></h3>
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle"></h3>
     <p>确认今天洗了这件？清洗日期将更新为今天，30天倒计时重新开始。</p>
-    <div class="popup-btns">
-      <button class="btn" onclick="closePopup()">取消</button>
-      <button class="btn btn-primary" onclick="confirmWash()">✅ 洗了</button>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn btn-accent" onclick="confirmWash()">✅ 洗好啦</button>
     </div>
   </div>
 </div>
@@ -226,233 +500,156 @@
 
 <script>
 const ROOMS = [
-  { id: 'master', name: '主卧', dotClass: 'master', items: [
+  { id: 'master', name: '主卧', headClass: 'master', dotClass: 'master', ico: '👑', roomClass: '', items: [
     { id: 'master-sheet', type: '床单', icon: '🛏️' },
     { id: 'master-duvet', type: '被罩', icon: '🫧' },
     { id: 'master-pillow', type: '枕套', icon: '🪶' }
   ]},
-  { id: 'brother', name: '哥哥房', dotClass: 'brother', items: [
-    { id: 'brother-sheet', type: '床单', icon: '🛏️' },
-    { id: 'brother-duvet', type: '被罩', icon: '🫧' },
-    { id: 'brother-pillow', type: '枕套', icon: '🪶' }
+  { id: 'brother', name: '哥哥房', headClass: 'brother', dotClass: 'brother', ico: '⛏️', roomClass: 'brother-room', items: [
+    { id: 'brother-sheet', type: '床单', icon: '🌿' },
+    { id: 'brother-duvet', type: '被罩', icon: '🐑' },
+    { id: 'brother-pillow', type: '枕套', icon: '⚔️' }
   ]},
-  { id: 'baby', name: '二宝房', dotClass: 'baby', items: [
-    { id: 'baby-sheet', type: '床单', icon: '🛏️' },
-    { id: 'baby-duvet', type: '被罩', icon: '🫧' },
-    { id: 'baby-pillow', type: '枕套', icon: '🪶' }
+  { id: 'baby', name: '妹妹房', headClass: 'baby', dotClass: 'baby', ico: '🦄', roomClass: 'baby-room', items: [
+    { id: 'baby-sheet', type: '床单', icon: '🌈' },
+    { id: 'baby-duvet', type: '被罩', icon: '💖' },
+    { id: 'baby-pillow', type: '枕套', icon: '⭐' }
   ]}
 ];
 
-const STORAGE_KEY = 'bedding-tracker-data';
-const CONFIG_KEY = 'bedding-tracker-config';
-let data = {};
-let config = { cycleDays: 30, warnDays: 7 };
-let pendingItemId = null;
+const SK = 'bdt-data', CK = 'bdt-config';
+let data = {}, config = { cycleDays: 30, warnDays: 7 };
+let pending = null;
 
 function today() { return new Date().toISOString().slice(0,10); }
+function ds(d) { return Math.floor((new Date() - new Date(d)) / 86400000); }
 
-function daysSince(dateStr) {
-  return Math.floor((new Date() - new Date(dateStr)) / 86400000);
-}
-
-function getStatus(days) {
+function status(days) {
   if (days <= config.cycleDays - config.warnDays) return 'green';
   if (days <= config.cycleDays) return 'yellow';
   if (days <= config.cycleDays + 7) return 'orange';
   return 'red';
 }
-
-function statusText(status, days) {
-  if (status === 'green') return '✅ 干净';
-  if (status === 'yellow') return `⚠️ ${config.cycleDays - days}天后该洗`;
-  if (status === 'orange') return '🔶 已超期';
-  return '🔴 该洗了！';
+function pct(days) { return Math.min(100, Math.round(days / config.cycleDays * 100)); }
+function label(s, days) {
+  if (s==='green') return '✅ 干净';
+  if (s==='yellow') return `${config.cycleDays-days}天后该洗`;
+  if (s==='orange') return '⚠️ 已超期';
+  return '🔴 快洗！';
 }
 
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) { data = JSON.parse(raw); return; }
-  } catch(e) {}
-  data = {};
+async function init() {
+  try { const r = localStorage.getItem(SK); if (r) { data = JSON.parse(r); return; } } catch(e) {}
+  try { const r = await fetch('data.json'); if (r.ok) { data = await r.json(); save(); return; } } catch(e) {}
+  resetAll();
+}
+function save() { localStorage.setItem(SK, JSON.stringify(data)); }
+function resetAll() {
   const d = today();
-  ROOMS.forEach(r => r.items.forEach(i => {
-    if (!data[i.id]) data[i.id] = d;
-  }));
-  saveData();
+  ROOMS.forEach(r => r.items.forEach(i => { data[i.id] = d; }));
+  save();
 }
-
-function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-
-function loadConfig() {
-  try {
-    const raw = localStorage.getItem(CONFIG_KEY);
-    if (raw) { config = JSON.parse(raw); return; }
-  } catch(e) {}
+function resetFromFile() { localStorage.removeItem(SK); init().then(render).then(() => toast('🔄 已从 data.json 重置')); }
+function initConfig() {
+  try { const r = localStorage.getItem(CK); if (r) { config = JSON.parse(r); return; } } catch(e) {}
   config = { cycleDays: 30, warnDays: 7 };
 }
-
 function saveConfig() {
   config.cycleDays = parseInt(document.getElementById('cycleDays').value) || 30;
   config.warnDays = parseInt(document.getElementById('warnDays').value) || 7;
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+  localStorage.setItem(CK, JSON.stringify(config));
   render();
 }
-
-function toggleConfig() {
-  document.getElementById('configPanel').classList.toggle('show');
-}
+function toggleConfig() { document.getElementById('configPanel').classList.toggle('show'); }
 
 function render() {
-  renderSummary();
+  renderStats();
   renderHeatmap();
   renderRooms();
 }
 
-function renderSummary() {
-  let green = 0, yellow = 0, red = 0;
-  ROOMS.forEach(r => r.items.forEach(i => {
-    const days = daysSince(data[i.id] || today());
-    const s = getStatus(days);
-    if (s === 'green') green++;
-    else if (s === 'yellow') yellow++;
-    else red++;
+function renderStats() {
+  let g=0,y=0,r=0;
+  ROOMS.forEach(rm => rm.items.forEach(i => {
+    const s = status(ds(data[i.id]||today()));
+    if (s==='green') g++; else if (s==='yellow') y++; else r++;
   }));
-  document.getElementById('summary').innerHTML = `
-    <div class="stat green"><div class="stat-value">${green}</div><div class="stat-label">干净</div></div>
-    <div class="stat yellow"><div class="stat-value">${yellow}</div><div class="stat-label">快到周期</div></div>
-    <div class="stat red"><div class="stat-value">${red}</div><div class="stat-label">超期/该洗</div></div>
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card"><div class="stat-num green">${g}</div><div class="stat-sub">✅ 干净</div></div>
+    <div class="stat-card"><div class="stat-num yellow">${y}</div><div class="stat-sub">⏰ 快到周期</div></div>
+    <div class="stat-card"><div class="stat-num red">${r}</div><div class="stat-sub">🔴 该洗啦</div></div>
   `;
 }
 
 function renderHeatmap() {
-  const weeks = [];
-  const now = new Date();
-  for (let w = 11; w >= 0; w--) {
-    const weekDays = [];
-    for (let d = 6; d >= 0; d--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - (w * 7 + d));
-      const dateStr = date.toISOString().slice(0,10);
-      let count = 0;
-      ROOMS.forEach(r => r.items.forEach(i => {
-        if (data[i.id] === dateStr) count++;
-      }));
-      weekDays.push({ date: dateStr, count });
+  const weeks = [], now = new Date();
+  for (let w=11; w>=0; w--) {
+    const wd = [];
+    for (let d=6; d>=0; d--) {
+      const dt = new Date(now); dt.setDate(dt.getDate()-(w*7+d));
+      const ds_ = dt.toISOString().slice(0,10);
+      let c=0; ROOMS.forEach(r=>r.items.forEach(i=>{if(data[i.id]===ds_)c++;}));
+      wd.push({date:ds_,count:c});
     }
-    weeks.push(weekDays);
+    weeks.push(wd);
   }
   const el = document.getElementById('heatmap');
-  el.innerHTML = weeks.map((week, wi) => {
-    const cells = week.map(d => {
-      let cls = '';
-      if (d.count >= 4) cls = 'l4';
-      else if (d.count >= 3) cls = 'l3';
-      else if (d.count >= 2) cls = 'l2';
-      else if (d.count >= 1) cls = 'l1';
-      const tip = `${d.date.slice(5)} · ${d.count}件`;
-      return `<div class="heatmap-cell ${cls}" title="${tip}"></div>`;
+  el.innerHTML = weeks.map(w=>{
+    const cells = w.map(d=>{
+      let cls=''; if(d.count>=4)cls='l4'; else if(d.count>=3)cls='l3'; else if(d.count>=2)cls='l2'; else if(d.count>=1)cls='l1';
+      return `<div class="heatmap-cell ${cls}" title="${d.date.slice(5)} · ${d.count}件"></div>`;
     }).join('');
-    const label = week[0].date.slice(5);
-    return `<div class="heatmap-col">${cells}<div class="heatmap-label">${label}</div></div>`;
+    return `<div class="heatmap-col">${cells}<div class="heatmap-col-label">${w[0].date.slice(5)}</div></div>`;
   }).join('');
 }
 
 function renderRooms() {
-  const el = document.getElementById('rooms');
-  el.innerHTML = ROOMS.map(r => `
-    <div class="room-card">
-      <div class="room-header">
-        <div class="room-dot ${r.dotClass}"></div>${r.name}
-      </div>
-      <div class="items">
-        ${r.items.map(i => {
-          const days = daysSince(data[i.id] || today());
-          const status = getStatus(days);
-          return `
-            <div class="item ${status}" onclick="openPopup('${i.id}','${r.name}${i.type}')">
-              <div class="item-icon">${i.icon}</div>
-              <div class="item-name">${i.type}</div>
-              <div class="item-days">${days}<span style="font-size:.6em;font-weight:400;color:var(--text-dim)">天</span></div>
-              <div class="item-status">${statusText(status, days)}</div>
-              <div class="wash-hint">🧺 点我标记已洗</div>
-            </div>`;
-        }).join('')}
-      </div>
-    </div>
-  `).join('');
+  document.getElementById('rooms').innerHTML = ROOMS.map(r=>{
+    const items = r.items.map(i=>{
+      const days = ds(data[i.id]||today());
+      const s = status(days);
+      const p = pct(days);
+      return `
+        <div class="item ${s}" onclick="openModal('${i.id}','${r.name}${i.type}')">
+          <div class="item-icon-wrap"><span class="item-icon">${i.icon}</span></div>
+          <div class="item-name">${i.type}</div>
+          <div class="item-days">${days}<span style="font-size:.42em;font-weight:700;color:var(--text-dim);opacity:.7">天</span></div>
+          <div class="item-status">${label(s,days)}</div>
+          <div class="item-bar-wrap"><div class="item-bar ${s}" style="width:${p}%"></div></div>
+          <div class="wash-overlay">🧺 点我</div>
+        </div>`;
+    }).join('');
+    return `<div class="room-card ${r.roomClass}"><div class="room-head ${r.headClass}"><div class="room-avatar ${r.dotClass}">${r.ico}</div>${r.name}</div><div class="items">${items}</div></div>`;
+  }).join('');
 }
 
-function openPopup(id, name) {
-  pendingItemId = id;
-  document.getElementById('popupTitle').textContent = `标记 ${name} 为已洗？`;
-  document.getElementById('popup').classList.add('active');
-}
-
-function closePopup() {
-  document.getElementById('popup').classList.remove('active');
-  pendingItemId = null;
-}
-
+function openModal(id,name) { pending=id; document.getElementById('modalTitle').textContent=`洗 ${name} 啦？`; document.getElementById('modal').classList.add('on'); }
+function closeModal() { document.getElementById('modal').classList.remove('on'); pending=null; }
 function confirmWash() {
-  if (pendingItemId) {
-    data[pendingItemId] = today();
-    saveData();
-    render();
-    showToast('✅ 已更新清洗日期');
-  }
-  closePopup();
+  if (pending) { data[pending]=today(); save(); render(); toast('🎉 洗好啦！香喷喷~'); }
+  closeModal();
 }
-
-function markAll() {
-  ROOMS.forEach(r => r.items.forEach(i => { data[i.id] = today(); }));
-  saveData();
-  render();
-  showToast('🎉 全部标记为今天清洗');
-}
-
+function markAll() { ROOMS.forEach(r=>r.items.forEach(i=>{data[i.id]=today();})); save(); render(); toast('🌟 全家都洗白白！'); }
 function exportData() {
-  const blob = new Blob([JSON.stringify({ data, config, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `bedding-tracker-${today()}.json`;
-  a.click(); URL.revokeObjectURL(url);
-  showToast('📋 数据已导出');
+  const b=new Blob([JSON.stringify({data,config,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`bedding-${today()}.json`; a.click(); toast('📋 已导出');
 }
-
 function importData(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    try {
-      const json = JSON.parse(ev.target.result);
-      if (json.data) { data = json.data; saveData(); }
-      if (json.config) { config = json.config; saveConfig(); }
-      render();
-      showToast('📥 数据已导入');
-    } catch(e) { showToast('❌ 导入失败，文件格式不对'); }
-  };
-  reader.readAsText(file);
-  e.target.value = '';
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{try{const j=JSON.parse(ev.target.result);if(j.data){data=j.data;save();}if(j.config){config=j.config;saveConfig();}render();toast('📥 已导入~');}catch(e){toast('❌ 格式不对');}};
+  r.readAsText(f); e.target.value='';
 }
-
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2000);
+function toast(m) {
+  const el=document.getElementById('toast'); el.textContent=m; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2000);
 }
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
 
-document.getElementById('popup').addEventListener('click', function(e) {
-  if (e.target === this) closePopup();
-});
-
-loadConfig();
-document.getElementById('cycleDays').value = config.cycleDays;
-document.getElementById('warnDays').value = config.warnDays;
-loadData();
-render();
+initConfig();
+document.getElementById('cycleDays').value=config.cycleDays;
+document.getElementById('warnDays').value=config.warnDays;
+init().then(render);
 </script>
 </body>
 </html>

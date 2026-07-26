@@ -517,8 +517,8 @@ const ROOMS = [
   ]}
 ];
 
-const SK = 'bdt-data', CK = 'bdt-config';
-let data = {}, config = { cycleDays: 30, warnDays: 7 };
+const SK = 'bdt-data', CK = 'bdt-config', HK = 'bdt-history';
+let data = {}, history = [], config = { cycleDays: 30, warnDays: 7 };
 let pending = null;
 
 function today() { return new Date().toISOString().slice(0,10); }
@@ -539,11 +539,16 @@ function label(s, days) {
 }
 
 async function init() {
-  try { const r = localStorage.getItem(SK); if (r) { data = JSON.parse(r); return; } } catch(e) {}
-  try { const r = await fetch('data.json'); if (r.ok) { data = await r.json(); save(); return; } } catch(e) {}
-  resetAll();
+  try { const r = await fetch('data.json'); if (r.ok) { data = await r.json(); save(); } } catch(e) {}
+  if (!data || Object.keys(data).length===0) {
+    try { const r = localStorage.getItem(SK); if (r) { data = JSON.parse(r); } } catch(e) {}
+  }
+  if (!data || Object.keys(data).length===0) { data = {}; resetAll(); }
+  try { const r = localStorage.getItem(HK); if (r) { history = JSON.parse(r); } } catch(e) { history = []; }
+  if (!history || !Array.isArray(history)) { history = []; }
 }
-function save() { localStorage.setItem(SK, JSON.stringify(data)); }
+function save() { localStorage.setItem(SK, JSON.stringify(data)); localStorage.setItem(HK, JSON.stringify(history)); syncToFile(); }
+function syncToFile() { var h = location.hostname || '192.168.1.20'; fetch('http://' + h + ':8898/save-data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lastWash: data, washHistory: history }) }).catch(() => {}); }
 function resetAll() {
   const d = today();
   ROOMS.forEach(r => r.items.forEach(i => { data[i.id] = d; }));
@@ -588,7 +593,10 @@ function renderHeatmap() {
     for (let d=6; d>=0; d--) {
       const dt = new Date(now); dt.setDate(dt.getDate()-(w*7+d));
       const ds_ = dt.toISOString().slice(0,10);
-      let c=0; ROOMS.forEach(r=>r.items.forEach(i=>{if(data[i.id]===ds_)c++;}));
+      let c = 0;
+      if (history && history.length) {
+        history.forEach(function(h) { if (h.date === ds_) c++; });
+      }
       wd.push({date:ds_,count:c});
     }
     weeks.push(wd);
@@ -626,7 +634,13 @@ function renderRooms() {
 function openModal(id,name) { pending=id; document.getElementById('modalTitle').textContent=`洗 ${name} 啦？`; document.getElementById('modal').classList.add('on'); }
 function closeModal() { document.getElementById('modal').classList.remove('on'); pending=null; }
 function confirmWash() {
-  if (pending) { data[pending]=today(); save(); render(); toast('🎉 洗好啦！香喷喷~'); }
+  if (pending) {
+    var id = pending;
+    var todayStr = today();
+    data[id] = todayStr;
+    history.push({ itemId: id, date: todayStr, ts: Date.now() });
+    save(); render(); toast('🎉 洗好啦！香喷喷~');
+  }
   closeModal();
 }
 function markAll() { ROOMS.forEach(r=>r.items.forEach(i=>{data[i.id]=today();})); save(); render(); toast('🌟 全家都洗白白！'); }

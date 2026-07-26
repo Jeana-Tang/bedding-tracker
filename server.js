@@ -15,6 +15,34 @@ const mime = {
 };
 
 http.createServer((req, res) => {
+  // CORS for cross-origin requests from main site
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+  // POST /save-data — persist data.json from frontend
+  if (req.method === 'POST' && req.url === '/save-data') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const d = JSON.parse(body);
+        if (d.lastWash) {
+          fs.writeFileSync(path.join(DIR, 'data.json'), JSON.stringify(d.lastWash, null, 2), 'utf-8');
+        }
+        if (d.washHistory) {
+          fs.writeFileSync(path.join(DIR, 'history.json'), JSON.stringify(d.washHistory, null, 2), 'utf-8');
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
   let file = req.url === '/' ? '/index.html' : req.url.split('?')[0];
   const fp = path.join(DIR, file);
   const ext = path.extname(fp).toLowerCase();
